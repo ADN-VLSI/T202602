@@ -6,15 +6,13 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-`include "mem.sv"   // Import the memory module
-
-module fifo #(
+module fifo_ratul #(
     parameter int FIFO_SIZE         = 4,  // address width for depth = 2^FIFO_SIZE
     parameter int DATA_WIDTH        = 8,  // width of each data word
     parameter bit ALLOW_FALLTHROUGH = 0   // enable fall-through (bypass) behavior
 ) (
-    input  logic arst_ni,  // active-low asynchronous reset
-    input  logic clk_i,    // clock
+    input logic arst_ni,  // active-low asynchronous reset
+    input logic clk_i,    // clock
 
     // Input (write) interface
     input  logic [DATA_WIDTH-1:0] data_in_i,        // input data
@@ -22,9 +20,9 @@ module fifo #(
     output logic                  data_in_ready_o,  // input ready
 
     // Output (read) interface
-    output logic [DATA_WIDTH-1:0] data_out_o,       // output data
-    output logic                  data_out_valid_o, // output valid
-    input  logic                  data_out_ready_i, // output ready
+    output logic [DATA_WIDTH-1:0] data_out_o,        // output data
+    output logic                  data_out_valid_o,  // output valid
+    input  logic                  data_out_ready_i,  // output ready
 
     output logic [FIFO_SIZE:0] count_o  // number of items in FIFO (binary difference)
 );
