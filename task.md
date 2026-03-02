@@ -1,15 +1,17 @@
 # Task for the trainees
 
-## 1. Create a branch from the issue
+## Create a branch from the issue
 
-## 2. Checkout to your branch
+## Checkout to your branch
 
-## 3. Create a FIFO buffer module in the design folder named as fifo_your_name.sv
+## Make a copy of the protocol converter module and name it as protocol_cvtr_your_name.sv in the design folder
 
-## 4. Implement the FIFO buffer using the memory module provided in the design folder
+## Implement the Remaining FSM States
 
-## 5. Add comments to your code
+## **BONUS**: Implement other registers as required
 
-## 6. Git add, commit and push your changes to the remote repository in your branch
+## Add comments to your code
 
-## 7. Create a pull request to merge your branch to the main branch
+## Git add, commit and push your changes to the remote repository in your branch
+
+## Create a pull request to merge your branch to the main branch

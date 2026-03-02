@@ -71,3 +71,4 @@ Refer APB protocol specifications for detailed timing and signal behavior during
 
 ## Internal State Machine
 
+![FSM](protocol_cvtr.svg)
