@@ -49,7 +49,6 @@ interface apb_if #(
     @(posedge clk_i);
 
     do @(posedge clk_i); while (!w_ready_o);
-
     w_valid_i <= 1'b0;
   endtask
 
