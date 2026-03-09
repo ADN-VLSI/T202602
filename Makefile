@@ -2,6 +2,10 @@ export SHELL=/bin/bash
 
 TOP := hello
 
+SEED := 0
+
+COV := 1
+
 ROOT_DIR := $(CURDIR)
 
 FILELIST  := $(shell find $(ROOT_DIR)/interface -type f -name "*.sv")
@@ -26,4 +30,6 @@ all:
 	@make -s build
 	@cd build && xvlog -sv $(FILELIST) $(EWHL)
 	@cd build && xelab $(TOP) -s $(TOP)_sim --O0 -debug all $(EWHL)
-	@cd build && xsim $(TOP)_sim -runall $(EWHL)
+	@echo "--testplusarg seed=$(SEED)" > build/xsim_args
+	@cd build && xsim $(TOP)_sim -runall -sv_seed $(SEED) -f xsim_args $(EWHL)
+	@cd build && xcrg -report_format html
