@@ -42,9 +42,59 @@ interface ci_if #(
 
   ///////////////// READ DATA CHANNEL METHODS /////////////////
   // TODO: Sabbir: Add read data channel methods if needed
+    // Slave: Send read data
+  task automatic send_read_data(
+      input logic [DATA_WIDTH-1:0] data
+  );
+    @(posedge clk_i);
+    r_data_o  <= data;
+    r_valid_o <= 1'b1;
+
+do @(posedge clk_i);
+while (!r_ready_i)
+    
+    r_valid_o <= 1'b0;
+  endtask
+
+
+  // Master: Receive read data
+  task automatic get_read_data(
+      output logic [DATA_WIDTH-1:0] data
+  );
+    r_ready_i <= 1'b1;
+    wait (r_valid_o);
+    data = r_data_o;
+    @(posedge clk_i);
+    r_ready_i <= 1'b0;
+  endtask
+
 
 
   ///////////////// RESPONSE CHANNEL METHODS /////////////////
   // TODO: Sabbir: Add response channel methods if needed
+    // Slave: Send response
+  task automatic send_response(
+      input logic slverr
+  );
+    @(posedge clk_i);
+    b_slverr_o <= slverr;
+    b_valid_o  <= 1'b1;
+
+    wait (b_ready_i);
+    @(posedge clk_i);
+    b_valid_o <= 1'b0;
+  endtask
+
+
+  // Master: Get response
+  task automatic get_response(
+      output logic slverr
+  );
+    b_ready_i <= 1'b1;
+    wait (b_valid_o);
+    slverr = b_slverr_o;
+    @(posedge clk_i);
+    b_ready_i <= 1'b0;
+  endtask
 
 endinterface
