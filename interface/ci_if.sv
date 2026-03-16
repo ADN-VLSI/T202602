@@ -35,10 +35,40 @@ interface ci_if #(
   ///////////////// CONTROL CHANNEL METHODS /////////////////
   // TODO: Alif: Add control channel methods if needed
 
-
+  
   ///////////////// WRITE DATA CHANNEL METHODS /////////////////
   // TODO: Ratul: Add write data channel methods if needed
 
+  task automatic send_w(input logic [DATA_WIDTH-1:0] data,
+                            input logic [DATA_WIDTH/8-1:0] strb);
+    w_data_i <= data;
+    w_strb_i <= strb;
+    w_valid_i <= 1'b1;
+    do @(posedge clk_i); while (!w_ready_o);
+    w_valid_i <= 1'b0;
+  endtask
+
+  task automatic recv_w(output logic [DATA_WIDTH-1:0] data,
+                          output logic [DATA_WIDTH/8-1:0] strb);
+    w_ready_o <= 1'b1;
+    do @(posedge clk_i); while (!w_valid_i);
+    data = w_data_i;
+    strb = w_strb_i;
+    w_ready_o <= 1'b0;
+  endtask
+
+  task automatic look_w(output logic [DATA_WIDTH-1:0] data,
+                          output logic [DATA_WIDTH/8-1:0] strb);
+    do @(posedge clk_i); while (!(w_valid_i && w_ready_o));
+    data = w_data_i;
+    strb = w_strb_i;
+  endtask
+
+  task automatic reset_w();
+    w_data_i  <= '0;
+    w_strb_i  <= '0;
+    w_valid_i <= 1'b0;
+  endtask
 
   ///////////////// READ DATA CHANNEL METHODS /////////////////
   // TODO: Sabbir: Add read data channel methods if needed
