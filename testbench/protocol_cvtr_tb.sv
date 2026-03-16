@@ -50,36 +50,36 @@ module protocol_cvtr_tb;
   // INTERNAL SIGNALS
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
-  // protocol_cvtr #(
-  //     .ADDR_WIDTH(ADDR_WIDTH),
-  //     .DATA_WIDTH(DATA_WIDTH)
-  // ) u_protocol_cvtr (
-  //     .arst_ni    (arst_ni),
-  //     .clk_i      (clk_i),
-  //     .c_addr_i   (c_addr_i),
-  //     .c_wenable_i(c_wenable_i),
-  //     .c_valid_i  (c_valid_i),
-  //     .c_ready_o  (c_ready_o),
-  //     .w_data_i   (w_data_i),
-  //     .w_strb_i   (w_strb_i),
-  //     .w_valid_i  (w_valid_i),
-  //     .w_ready_o  (w_ready_o),
-  //     .r_data_o   (r_data_o),
-  //     .r_valid_o  (r_valid_o),
-  //     .r_ready_i  (r_ready_i),
-  //     .b_slverr_o (b_slverr_o),
-  //     .b_valid_o  (b_valid_o),
-  //     .b_ready_i  (b_ready_i),
-  //     .psel_o     (apb_intf.psel),
-  //     .penable_o  (apb_intf.penable),
-  //     .paddr_o    (apb_intf.paddr),
-  //     .pwrite_o   (apb_intf.pwrite),
-  //     .pwdata_o   (apb_intf.pwdata),
-  //     .pstrb_o    (apb_intf.pstrb),
-  //     .pready_i   (apb_intf.pready),
-  //     .prdata_i   (apb_intf.prdata),
-  //     .pslverr_i  (apb_intf.pslverr)
-  // );
+  protocol_cvtr #(
+      .ADDR_WIDTH(ADDR_WIDTH),
+      .DATA_WIDTH(DATA_WIDTH)
+  ) u_protocol_cvtr (
+      .arst_ni    (arst_ni),
+      .clk_i      (clk_i),
+      .c_addr_i   (c_addr_i),
+      .c_wenable_i(c_wenable_i),
+      .c_valid_i  (c_valid_i),
+      .c_ready_o  (c_ready_o),
+      .w_data_i   (w_data_i),
+      .w_strb_i   (w_strb_i),
+      .w_valid_i  (w_valid_i),
+      .w_ready_o  (w_ready_o),
+      .r_data_o   (r_data_o),
+      .r_valid_o  (r_valid_o),
+      .r_ready_i  (r_ready_i),
+      .b_slverr_o (b_slverr_o),
+      .b_valid_o  (b_valid_o),
+      .b_ready_i  (b_ready_i),
+      .psel_o     (apb_intf.psel),
+      .penable_o  (apb_intf.penable),
+      .paddr_o    (apb_intf.paddr),
+      .pwrite_o   (apb_intf.pwrite),
+      .pwdata_o   (apb_intf.pwdata),
+      .pstrb_o    (apb_intf.pstrb),
+      .pready_i   (apb_intf.pready),
+      .prdata_i   (apb_intf.prdata),
+      .pslverr_i  (apb_intf.pslverr)
+  );
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // METHODS
