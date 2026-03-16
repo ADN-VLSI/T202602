@@ -1,7 +1,8 @@
 interface apb_if #(
-    parameter int ADDR_WIDTH = 8,
-    parameter int DATA_WIDTH = 32,
-    parameter bit ACT_AS_MEM = 0
+    parameter int ADDR_WIDTH   = 8,
+    parameter int DATA_WIDTH   = 32,
+    parameter bit ACT_AS_MEM   = 0,
+    parameter int JIBRISH_DATA = 0
 ) (
     input logic arst_ni,  // active-low asynchronous reset
     input logic clk_i     // clock
@@ -11,22 +12,22 @@ interface apb_if #(
   // SIGNAL DECLARATIONS
   ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  logic                    psel;
-  logic                    penable;
-  logic [  ADDR_WIDTH-1:0] paddr;
-  logic                    pwrite;
-  logic [  DATA_WIDTH-1:0] pwdata;
-  logic [DATA_WIDTH/8-1:0] pstrb;
+  logic                         psel;
+  logic                         penable;
+  logic [  ADDR_WIDTH-1:0]      paddr;
+  logic                         pwrite;
+  logic [DATA_WIDTH/8-1:0][7:0] pwdata;
+  logic [DATA_WIDTH/8-1:0]      pstrb;
 
-  logic                    pready;
-  logic [  DATA_WIDTH-1:0] prdata;
-  logic                    pslverr;
+  logic                         pready;
+  logic [DATA_WIDTH/8-1:0][7:0] prdata;
+  logic                         pslverr;
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // INTERNAL VARIABLES
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
-  bit                      is_edge_aligned = 0;
+  bit                           is_edge_aligned = 0;
 
   always @(posedge clk_i) begin
     is_edge_aligned = 1;
@@ -146,21 +147,21 @@ interface apb_if #(
 
   if (ACT_AS_MEM) begin
 
-    logic [7:0] mem[logic [ADDR_WIDTH-1:0]];
+    logic [7:0] mem[int];
 
     localparam int IDLE = 0;
     localparam int SETUP = 1;
     localparam int ACCESS = 2;
 
-    int                    current_state;
-    int                    next_state;
+    int                           current_state;
+    int                           next_state;
 
-    logic                  internal_pready;
-    logic [DATA_WIDTH-1:0] internal_prdata;
-    logic                  internal_pslverr;
+    logic                         internal_pready;
+    logic [DATA_WIDTH/8-1:0][7:0] internal_prdata;
+    logic                         internal_pslverr;
 
-    assign pready  = (penable) ? internal_pready  : '0;
-    assign prdata  = (penable) ? internal_prdata  : '0;
+    assign pready  = (penable) ? internal_pready : '0;
+    assign prdata  = (penable) ? internal_prdata : '0;
     assign pslverr = (penable) ? internal_pslverr : '0;
 
     always_comb begin
@@ -217,8 +218,12 @@ interface apb_if #(
     always @(posedge clk_i) begin
       if (next_state == SETUP) begin
         foreach (pstrb[i]) begin
-          internal_prdata[i*8+:8] <= mem[paddr+i];
-          if (pstrb[i]) mem[paddr+i] = pwdata[i*8+:8];
+          if (JIBRISH_DATA) begin
+            internal_prdata[i] <= $urandom;
+          end else begin
+            internal_prdata[i] <= mem[paddr+i];
+            if (pstrb[i] & pwrite) mem[paddr+i] = pwdata[i];
+          end
         end
       end
     end
