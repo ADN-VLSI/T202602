@@ -159,9 +159,9 @@ interface apb_if #(
     logic [DATA_WIDTH-1:0] internal_prdata;
     logic                  internal_pslverr;
 
-    assign pready  = (penable) ? internal_pready : 'z;
-    assign prdata  = (penable) ? internal_prdata : 'z;
-    assign pslverr = (penable) ? internal_pslverr : 'z;
+    assign pready  = (penable) ? internal_pready  : '0;
+    assign prdata  = (penable) ? internal_prdata  : '0;
+    assign pslverr = (penable) ? internal_pslverr : '0;
 
     always_comb begin
       next_state = current_state;
