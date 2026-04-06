@@ -1,40 +1,45 @@
-module dual_flop_sync_tb;
+`timescale 1ns/1ps
+module tb_sync_2ff;
+    reg clk;
+    reg rst_n;
+    reg [7:0] async_in;
+    wire [7:0] sync_out;
 
-  logic clk;
-  logic rst_n;
-  logic async_in;
-  logic sync_out;
+    sync_2ff #(8) uut (
+        .clk(clk),
+        .rst_n(rst_n),
+        .async_in(async_in),
+        .sync_out(sync_out)
+    );
 
-  // Instantiate DUT
-  dual_flop_sync dut (
-    .clk(clk),
-    .rst_n(rst_n),
-    .async_in(async_in),
-    .sync_out(sync_out)
-  );
+    initial clk = 0;
+    always #5 clk = ~clk;
 
-  // Clock generation (10ns period)
-  always #5 clk = ~clk;
+    initial begin
+        rst_n = 0;
+        async_in = 8'b00000000;
+        #3 rst_n = 1;
 
-  initial begin
-    $dumpfile("dump.vcd");
-    $dumpvars(1);
-    // Initialize signals
-    clk = 0;
-    rst_n = 0;
-    async_in = 0;
+        @(posedge clk);
+        async_in <= 8'b10101010;
+        repeat(2) @(posedge clk);
+        #1;
 
-    // Apply reset
-    #12;
-    rst_n = 1;
+        if (sync_out !== 8'b10101010)
+            $display("Test 1 FAILED: got %b", sync_out);
+        else
+            $display("Test 1 PASSED: sync_out = %b", sync_out);
 
-    // Apply asynchronous input changes (not aligned to clock)
-    #7  async_in = 1;   // random time
-    #13 async_in = 0;
-    #9  async_in = 1;
-    #11 async_in = 0;
+        @(posedge clk);
+        async_in <= 8'b11001100;
+        repeat(2) @(posedge clk);
+        #1;
 
-    #20;
-    $finish;
-  end
+        if (sync_out !== 8'b11001100)
+            $display("Test 2 FAILED: got %b", sync_out);
+        else
+            $display("Test 2 PASSED: sync_out = %b", sync_out);
+
+        #20 $finish;
+    end
 endmodule
