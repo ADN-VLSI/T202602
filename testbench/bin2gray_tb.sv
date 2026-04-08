@@ -19,8 +19,8 @@ module bin2gray_tb #(parameter int N = 4);
     endfunction
 
     initial begin
-        int unsigned error_count = 0;
-        int unsigned test_count = 0;
+        automatic int unsigned error_count = 0;
+        automatic int unsigned test_count = 0;
 
         $display("%%0t: Starting bin2gray self-checking testbench for N=%0d", $time, N);
 
