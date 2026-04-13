@@ -1,0 +1,3 @@
+[submodule "submodule/apb-uart"]
+	path = submodule/apb-uart
+	url = https://github.com/ADN-VLSI/apb-uart.git
