@@ -2,6 +2,11 @@
 `include "apb_rsp_item.sv"
 `include "apb_driver.sv"
 `include "apb_monitor.sv"
+`include "addr_def.sv"
+`include "uart_seq_item.sv"
+`include "uart_rsp_item.sv"
+`include "uart_driver.sv"
+`include "uart_monitor.sv"
 
 module uart_tb;
 
@@ -30,6 +35,11 @@ module uart_tb;
   mailbox #(apb_rsp_item) apb_mon_mbx;
   apb_driver dvr;
   apb_monitor mon;
+
+  mailbox #(uart_seq_item) uart_dvr_mbx;
+  mailbox #(uart_rsp_item) uart_mon_mbx;
+  uart_driver uart_dvr;
+  uart_monitor uart_mon;
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // DUT INSTANCES
@@ -71,6 +81,12 @@ module uart_tb;
     apb_mon_mbx = new();
     mon = new(apb_intf, apb_mon_mbx);
 
+    uart_dvr_mbx = new(1);
+    uart_dvr = new(uart_intf, uart_dvr_mbx);
+
+    uart_mon_mbx = new();
+    uart_mon = new(uart_intf, uart_mon_mbx);
+
 
     ctrl_intf.apply_reset();
     dvr.reset();
@@ -78,6 +94,8 @@ module uart_tb;
     ctrl_intf.enable_clock();
     dvr.run();
     mon.run();
+    uart_dvr.run();
+    uart_mon.run();
 
     begin
       automatic apb_seq_item seq_item;
@@ -89,11 +107,25 @@ module uart_tb;
       apb_dvr_mbx.put(seq_item);
     end
 
+    begin
+      automatic uart_seq_item uart_seq;
+      uart_seq = new();
+      uart_seq.randomize();
+      uart_dvr_mbx.put(uart_seq);
+    end
+    
     mon.wait_till_idle();
+    uart_mon.wait_till_idle();
 
     while (apb_mon_mbx.num()) begin
       apb_rsp_item item;
       apb_mon_mbx.get(item);
+      item.print();
+    end
+
+    while (uart_mon_mbx.num()) begin
+      uart_rsp_item item;
+      uart_mon_mbx.get(item);
       item.print();
     end
 
