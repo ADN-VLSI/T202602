@@ -247,15 +247,15 @@ module uart_tb;
 
           end else begin  // DUT TX -> TB RX
 
-            //   if (tx_q[0] !== item.data) begin
-            //     $error("TX data mismatch! Expected 0x%0h but got 0x%0h", tx_q[0], item.data);
-            //     fail++;
-            //   end else begin
-            //     if (debug)
-            //       $display("\033[1;32mTransmitted 0x%0h (%s) from DUT\033[0m", item.data, item.data);
-            //     pass++;
-            //   end
-            //   tx_q.delete(0);
+              if (tx_q[0] !== item.data) begin
+                $error("TX data mismatch! Expected 0x%0h but got 0x%0h", tx_q[0], item.data);
+                fail++;
+              end else begin
+                if (debug)
+                  $display("\033[1;32mTransmitted 0x%0h (%s) from DUT\033[0m", item.data, item.data);
+                pass++;
+              end
+              tx_q.delete(0);
 
           end
         end
