@@ -2,6 +2,11 @@
 `include "apb_rsp_item.sv"
 `include "apb_driver.sv"
 `include "apb_monitor.sv"
+`include "addr_def.sv"
+`include "uart_seq_item.sv"
+`include "uart_rsp_item.sv"
+`include "uart_driver.sv"
+`include "uart_monitor.sv"
 
 module uart_tb;
 
@@ -28,8 +33,13 @@ module uart_tb;
 
   mailbox #(apb_seq_item) apb_dvr_mbx;
   mailbox #(apb_rsp_item) apb_mon_mbx;
-  apb_driver dvr;
-  apb_monitor mon;
+  apb_driver apb_dvr;
+  apb_monitor apb_mon;
+
+  mailbox #(uart_seq_item) uart_dvr_mbx;
+  mailbox #(uart_rsp_item) uart_mon_mbx;
+  uart_driver uart_dvr;
+  uart_monitor uart_mon;
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // DUT INSTANCES
@@ -56,6 +66,19 @@ module uart_tb;
   );
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
+  // METHODS
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  task automatic apb_write(int addr, int data);
+    automatic apb_seq_item item;
+    item = new();
+    item.addr = addr;
+    item.write = 1;
+    item.data = data;
+    apb_dvr_mbx.put(item);
+  endtask
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
   // PROCEDURAL BLOCKS
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -66,36 +89,68 @@ module uart_tb;
     $timeformat(-3, 2, "ms");
 
     apb_dvr_mbx = new(1);
-    dvr = new(apb_intf, apb_dvr_mbx);
+    apb_dvr = new(apb_intf, apb_dvr_mbx);
 
     apb_mon_mbx = new();
-    mon = new(apb_intf, apb_mon_mbx);
+    apb_mon = new(apb_intf, apb_mon_mbx);
+
+    uart_dvr_mbx = new(1);
+    uart_dvr = new(uart_intf, uart_dvr_mbx);
+
+    uart_mon_mbx = new();
+    uart_mon = new(uart_intf, uart_mon_mbx);
 
 
     ctrl_intf.apply_reset();
-    dvr.reset();
+    apb_dvr.reset();
 
     ctrl_intf.enable_clock();
-    dvr.run();
-    mon.run();
+    apb_dvr.run();
+    apb_mon.run();
+    uart_dvr.run();
+    uart_mon.run();
+
+    // TODO Configure using scoreboard
+    uart_intf.BAUD_RATE = 'd1000000;
+    uart_intf.PARITY_ENABLE = 'd0;
+    uart_intf.PARITY_TYPE = 'd0;
+    uart_intf.SECOND_STOP_BIT = 'd0;
+    uart_intf.DATA_BITS = 'd8;
+
+    apb_write(`CTRL_ADDR, 'b110);  // flush all
+    apb_write(`CTRL_ADDR, 'b000);  // disable flush  
+    apb_write(`CLK_DIV_ADDR, 'd100);  // set clock divider
+    apb_write(`CTRL_ADDR, 'b001);  // enable clock
+
 
     begin
-      automatic apb_seq_item seq_item;
-      seq_item = new();
-      seq_item.randomize();
-      apb_dvr_mbx.put(seq_item);
-      seq_item = new seq_item;
-      seq_item.write = 0;
-      apb_dvr_mbx.put(seq_item);
+      automatic string txt_string = "Hello Ratul, Sabbir & Alif bhai..! :)";
+      for (int i = 0; i < txt_string.len(); i++) begin
+        apb_write(`TX_DATA_ADDR, txt_string[i]);
+      end
     end
 
-    mon.wait_till_idle();
+    apb_mon.wait_till_idle();
+    uart_mon.wait_till_idle();
 
-    while (apb_mon_mbx.num()) begin
-      apb_rsp_item item;
-      apb_mon_mbx.get(item);
-      item.print();
+    // while (apb_mon_mbx.num()) begin
+    //   apb_rsp_item item;
+    //   apb_mon_mbx.get(item);
+    //   item.print();
+    // end
+
+    begin
+      automatic string txt;
+      while (uart_mon_mbx.num()) begin
+        uart_rsp_item item;
+        uart_mon_mbx.get(item);
+        // item.print();
+        txt = {txt, item.data};
+      end
+      $display("\033[1;33mReceived UART data: %s\033[0m", txt);
     end
+
+    #100ns;
 
     $finish;
   end

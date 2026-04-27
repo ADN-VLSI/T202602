@@ -15,11 +15,11 @@ class uart_monitor;
   endfunction
 
   task automatic run();
-    uart_rsp_item item;
 
     fork
 
       forever begin
+        uart_rsp_item item;
         item                 = new();
         intf.recv_rx(item.data, item.parity);
         item.baud_rate       = intf.BAUD_RATE;
@@ -27,6 +27,20 @@ class uart_monitor;
         item.parity_type     = intf.PARITY_TYPE;
         item.second_stop_bit = intf.SECOND_STOP_BIT;
         item.data_bits       = intf.DATA_BITS;
+        item.intf_tx         = 0;
+        mbx.put(item);
+      end
+
+      forever begin
+        uart_rsp_item item;
+        item                 = new();
+        intf.recv_tx(item.data, item.parity);
+        item.baud_rate       = intf.BAUD_RATE;
+        item.parity_enable   = intf.PARITY_ENABLE;
+        item.parity_type     = intf.PARITY_TYPE;
+        item.second_stop_bit = intf.SECOND_STOP_BIT;
+        item.data_bits       = intf.DATA_BITS;
+        item.intf_tx         = 1;
         mbx.put(item);
       end
 
