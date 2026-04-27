@@ -1,14 +1,22 @@
+`include "addr_def.sv"
+
 `include "apb_seq_item.sv"
 `include "apb_rsp_item.sv"
 `include "apb_driver.sv"
 `include "apb_monitor.sv"
-`include "addr_def.sv"
+
 `include "uart_seq_item.sv"
 `include "uart_rsp_item.sv"
 `include "uart_driver.sv"
 `include "uart_monitor.sv"
 
 module uart_tb;
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // LCOAL PARAMETER DECLARATIONS
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  localparam int debug = 1;
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // SIGNAL DECLARATIONS
@@ -84,6 +92,9 @@ module uart_tb;
 
   initial begin
 
+    automatic int pass = 0;
+    automatic int fail = 0;
+
     $dumpfile("uart_tb.vcd");
     $dumpvars(0, uart_tb);
     $timeformat(-3, 2, "ms");
@@ -110,23 +121,194 @@ module uart_tb;
     uart_dvr.run();
     uart_mon.run();
 
-    // TODO Configure using scoreboard
-    uart_intf.BAUD_RATE = 'd1000000;
-    uart_intf.PARITY_ENABLE = 'd0;
-    uart_intf.PARITY_TYPE = 'd0;
-    uart_intf.SECOND_STOP_BIT = 'd0;
     uart_intf.DATA_BITS = 'd8;
+
+    begin
+      bit [7:0] tx_q        [$];
+      bit [7:0] rx_q        [$];
+      bit       tx_flushing;
+      bit       rx_flushing;
+      fork
+
+        forever begin  // APB INTF
+          apb_rsp_item item;
+          apb_mon_mbx.get(item);
+
+          if (!item.slverr) begin
+
+            if (item.write) begin  // APB WRITE
+              case (item.addr)
+
+                `CTRL_ADDR: begin
+                  if (item.data[1]) begin
+                    tx_q.delete();
+                    tx_flushing = 1;
+                    if (debug) $display("\033[1;34mFlushing TX FIFO\033[0m");
+                  end else begin
+                    tx_flushing = 0;
+                    if (debug) $display("\033[1;34mTX FIFO flush disabled\033[0m");
+                  end
+                  if (item.data[2]) begin
+                    rx_q.delete();
+                    rx_flushing = 1;
+                    if (debug) $display("\033[1;34mFlushing RX FIFO\033[0m");
+                  end else begin
+                    rx_flushing = 0;
+                    if (debug) $display("\033[1;34mRX FIFO flush disabled\033[0m");
+                  end
+                end
+
+                `CLK_DIV_ADDR: begin
+                  if (debug) $display("\033[1;34mSetting clock divider to %0d\033[0m", item.data);
+                  uart_intf.BAUD_RATE = 100e6 / item.data;
+                  if (debug)
+                    $display("\033[1;34mEffective baud rate: %0d\033[0m", uart_intf.BAUD_RATE);
+                end
+
+                `CFG_ADDR: begin
+                  uart_intf.PARITY_ENABLE = item.data[0];
+                  if (debug)
+                    $display("\033[1;34mParity %s\033[0m", item.data[0] ? "enabled" : "disabled");
+
+                  uart_intf.PARITY_TYPE = item.data[1];
+                  if (debug)
+                    $display("\033[1;34mParity type %s\033[0m", item.data[1] ? "odd" : "even");
+
+                  uart_intf.SECOND_STOP_BIT = item.data[2];
+                  if (debug)
+                    $display(
+                        "\033[1;34mSecond stop bit %s\033[0m", item.data[2] ? "enabled" : "disabled"
+                    );
+                end
+
+                `TX_FIFO_COUNT_ADDR, `RX_FIFO_COUNT_ADDR, `RX_DATA_ADDR: begin
+                  $fatal(1, "Write shouldn't succeed in this address 0x%x", item.addr);
+                end
+
+                `TX_DATA_ADDR: begin
+                  tx_q.push_back(item.data[7:0]);
+                  if (debug)
+                    $display(
+                        "\033[1;34mWritten 0x%0h (%s) to TX FIFO\033[0m",
+                        item.data[7:0],
+                        item.data[7:0]
+                    );
+                end
+
+              endcase
+
+            end else begin  // APB READ
+
+              case (item.addr)
+
+                `TX_DATA_ADDR: begin
+                  $fatal(1, "Read shouldn't succeed in this address 0x%x", item.addr);
+                end
+
+                `RX_DATA_ADDR: begin
+                  if (item.data[7:0] !== rx_q[0]) begin
+                    $error("RX data mismatch! Expected 0x%0h but got 0x%0h", rx_q[0],
+                           item.data[7:0]);
+                    fail++;
+                  end else begin
+                    if (debug)
+                      $display(
+                          "\033[1;35mRead 0x%0h (%s) from RX FIFO\033[0m",
+                          item.data[7:0],
+                          item.data[7:0]
+                      );
+                    pass++;
+                  end
+                  rx_q.delete(0);
+                end
+
+              endcase
+            end
+
+          end
+
+        end
+
+        forever begin  // UART INTF
+          uart_rsp_item item;
+          uart_mon_mbx.get(item);
+
+          if (item.intf_tx) begin  // TX TX -> DUT RX
+            rx_q.push_back(item.data);
+            if (debug)
+              $display("\033[1;32mReceived 0x%0h (%s) from UART\033[0m", item.data, item.data);
+
+          end else begin  // DUT TX -> TB RX
+
+            if (tx_q[0] !== item.data) begin
+              $error("TX data mismatch! Expected 0x%0h but got 0x%0h", tx_q[0], item.data);
+              fail++;
+            end else begin
+              if (debug)
+                $display("\033[1;32mTransmitted 0x%0h (%s) from DUT\033[0m", item.data, item.data);
+              pass++;
+            end
+            tx_q.delete(0);
+
+          end
+        end
+
+      join_none
+    end
 
     apb_write(`CTRL_ADDR, 'b110);  // flush all
     apb_write(`CTRL_ADDR, 'b000);  // disable flush  
     apb_write(`CLK_DIV_ADDR, 'd100);  // set clock divider
     apb_write(`CTRL_ADDR, 'b001);  // enable clock
 
+    begin
+      automatic string dut_tx_string = "Hello Ratul, Sabbir & Alif bhai..! :)";
+      for (int i = 0; i < dut_tx_string.len(); i++) begin
+        apb_write(`TX_DATA_ADDR, dut_tx_string[i]);
+      end
+    end
+
+    apb_mon.wait_till_idle();
+    uart_mon.wait_till_idle();
 
     begin
-      automatic string txt_string = "Hello Ratul, Sabbir & Alif bhai..! :)";
-      for (int i = 0; i < txt_string.len(); i++) begin
-        apb_write(`TX_DATA_ADDR, txt_string[i]);
+      automatic string dut_rx_string = "Hi everyone..! :)";
+      for (int i = 0; i < dut_rx_string.len(); i++) begin
+        uart_seq_item item;
+        item = new();
+        item.data = dut_rx_string[i];  // only the least significant byte will be considered
+        item.baud_rate = uart_intf.BAUD_RATE;
+        item.parity_enable = uart_intf.PARITY_ENABLE;
+        item.parity_type = uart_intf.PARITY_TYPE;
+        item.second_stop_bit = uart_intf.SECOND_STOP_BIT;
+        item.data_bits = uart_intf.DATA_BITS;
+        uart_dvr_mbx.put(item);
+      end
+    end
+
+    apb_mon.wait_till_idle();
+    uart_mon.wait_till_idle();
+
+    begin
+      apb_seq_item item;
+      item = new();
+      item.write = 0;
+      item.addr = `RX_FIFO_COUNT_ADDR;
+      apb_dvr_mbx.put(item);
+    end
+
+    begin
+      apb_rsp_item item;
+      int num_rx;
+      apb_mon.wait_till_idle();
+      apb_mon_mbx.get(item);
+      num_rx = item.data[7:0];
+      repeat (num_rx) begin
+        apb_seq_item item;
+        item = new();
+        item.write = 0;
+        item.addr = `RX_DATA_ADDR;
+        apb_dvr_mbx.put(item);
       end
     end
 
@@ -139,18 +321,13 @@ module uart_tb;
     //   item.print();
     // end
 
-    begin
-      automatic string txt;
-      while (uart_mon_mbx.num()) begin
-        uart_rsp_item item;
-        uart_mon_mbx.get(item);
-        // item.print();
-        txt = {txt, item.data};
-      end
-      $display("\033[1;33mReceived UART data: %s\033[0m", txt);
-    end
-
     #100ns;
+
+    if (fail == 0) begin
+      $display("\033[1;32mTEST PASSED...! %0d/%0d OK\033[0m", pass, pass + fail);
+    end else begin
+      $display("\033[1;31mTEST FAILED...! %0d/%0d OK\033[0m", pass, pass + fail);
+    end
 
     $finish;
   end
