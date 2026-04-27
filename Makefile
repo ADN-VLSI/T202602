@@ -28,6 +28,7 @@ clean:
 all:
 	@make -s clean
 	@make -s build
+	@git submodule update --init --depth 1
 	@cd build && xvlog -sv $(FILELIST) $(EWHL)
 	@cd build && xelab $(TOP) -s $(TOP)_sim --O0 -debug all $(EWHL)
 	@echo "--testplusarg seed=$(SEED)" > build/xsim_args

@@ -66,6 +66,7 @@ all:
 compile:
 	@make -s clean
 	@make -s $(BUILD)
+	@git submodule update --init --depth 1
 	@cd $(BUILD) && xvlog -sv $(FL) $(EWHL)
 	@cd $(BUILD) && xelab uart_tb -debug all -s top $(EWHL)
 

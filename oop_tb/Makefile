@@ -36,7 +36,6 @@ FL += $(APB_UART)/rtl/uart_tx.sv
 FL += $(APB_UART)/rtl/uart_top.sv
 
 FL += $(T202602)/oop_tb/uart_tb.sv
-FL += $(T202602)/oop_tb/uart_vip_tb.sv
 
 BUILD := $(T202602)/build
 
@@ -69,6 +68,7 @@ all:
 compile:
 	@make -s clean
 	@make -s $(BUILD)
+	@git submodule update --init --depth 1
 	@cd $(BUILD) && xvlog -sv $(FL) $(EWHL)
 	@cd $(BUILD) && xelab $(TOP) -debug all -s top $(EWHL)
 

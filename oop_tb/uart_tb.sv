@@ -17,6 +17,7 @@ module uart_tb;
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
   localparam int debug = 1;
+  localparam int skip_weird_vivado_issue = 1;
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // SIGNAL DECLARATIONS
@@ -207,22 +208,51 @@ module uart_tb;
                 end
 
                 `RX_DATA_ADDR: begin
-                  if (item.data[7:0] !== rx_q[0]) begin
-                    for (int i = 7; i >= 0 ; i--) begin
-                      $write("\033[1;3%0dm%b:%b\033[0m  ", (item.data[i] !== rx_q[0][i] ? 2 : 1),
-                             item.data[i], rx_q[0][i]);
-                    end
-                    $error("RX data mismatch! Expected 0x%0h (%b) but got 0x%0h (%b)", rx_q[0],
-                           rx_q[0], item.data[7:0], item.data[7:0]);
-                    fail++;
+                  if (skip_weird_vivado_issue) begin
+                    ////////////////////////////////////// WEIRD FIX //////////////////////////////////////
+                    ////////////////////////////////////// WEIRD FIX //////////////////////////////////////
+                    bit [7:0] exp;                                                                     ////
+                    bit [7:0] got;                                                                     ////
+                    exp = rx_q.pop_front();                                                            ////
+                    got = item.data;                                                                   ////
+                    if (got !== exp) begin                                                             ////
+                      for (int i = 7; i >= 0; i--) begin                                               ////
+                        $write("\033[1;3%0dm%b:%b\033[0m  ", (got[i] !== exp[i] ? 2 : 1), got[i],      ////
+                               exp[i]);                                                                ////
+                      end                                                                              ////
+                      $error("RX data mismatch! Expected 0x%0h (%b) but got 0x%0h (%b)", exp, exp,     ////
+                             got, got);                                                                ////
+                      fail++;                                                                          ////
+                    end else begin                                                                     ////
+                      if (debug) begin                                                                 ////
+                        $display("\033[1;35mRead 0x%0h (%s) from RX FIFO\033[0m", got, got);           ////
+                      end                                                                              ////
+                      pass++;                                                                          ////
+                    end                                                                                ////
+                    ////////////////////////////////////// WEIRD FIX //////////////////////////////////////
+                    ////////////////////////////////////// WEIRD FIX //////////////////////////////////////
                   end else begin
-                    if (debug) begin
-                      $display("\033[1;35mRead 0x%0h (%s) from RX FIFO\033[0m", item.data[7:0],
-                               item.data[7:0]);
-                    end
-                    pass++;
+                    ///////////////////////////////////// WEIRD ISSUE /////////////////////////////////////
+                    ///////////////////////////////////// WEIRD ISSUE /////////////////////////////////////
+                    if (item.data[7:0] !== rx_q[0]) begin                                              ////
+                      for (int i = 7; i >= 0; i--) begin                                               ////
+                        $write("\033[1;3%0dm%b:%b\033[0m  ", (item.data[i] !== rx_q[0][i] ? 2 : 1),    ////
+                               item.data[i], rx_q[0][i]);                                              ////
+                      end                                                                              ////
+                      $error("RX data mismatch! Expected 0x%0h (%b) but got 0x%0h (%b)", rx_q[0],      ////
+                             rx_q[0], item.data[7:0], item.data[7:0]);                                 ////
+                      fail++;                                                                          ////
+                    end else begin                                                                     ////
+                      if (debug) begin                                                                 ////
+                        $display("\033[1;35mRead 0x%0h (%s) from RX FIFO\033[0m", item.data[7:0],      ////
+                                 item.data[7:0]);                                                      ////
+                      end                                                                              ////
+                      pass++;                                                                          ////
+                    end                                                                                ////
+                    rx_q.delete(0);                                                                    ////
+                    ///////////////////////////////////// WEIRD ISSUE /////////////////////////////////////
+                    ///////////////////////////////////// WEIRD ISSUE /////////////////////////////////////
                   end
-                  rx_q.delete(0);
                 end
 
                 `RX_FIFO_COUNT_ADDR: begin
