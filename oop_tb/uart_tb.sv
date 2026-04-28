@@ -213,8 +213,9 @@ module uart_tb;
                     ////////////////////////////////////// WEIRD FIX //////////////////////////////////////
                     bit [7:0] exp;                                                                     ////
                     bit [7:0] got;                                                                     ////
-                    exp = rx_q.pop_front();                                                            ////
-                    got = item.data;                                                                   ////
+                    exp = rx_q[0];                                                                     ////
+                    rx_q.delete(0);                                                                    ////
+                    got = item.data[7:0];                                                              ////
                     if (got !== exp) begin                                                             ////
                       for (int i = 7; i >= 0; i--) begin                                               ////
                         $write("\033[1;3%0dm%b:%b\033[0m  ", (got[i] !== exp[i] ? 2 : 1), got[i],      ////
