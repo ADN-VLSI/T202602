@@ -43,7 +43,7 @@ class apb_monitor extends uvm_monitor;
       rsp = apb_rsp_item::type_id::create("rsp");
       rsp.addr   = address;
       rsp.write  = direction;
-      rsp.date   = direction ? write_data : read_data;
+      rsp.data   = direction ? write_data : read_data;
       rsp.slverr = slverr;
       // Send the response item via the analysis port
       ap.write(rsp);
