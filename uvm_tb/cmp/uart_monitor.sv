@@ -27,6 +27,39 @@ class uart_monitor extends uvm_monitor;
     end
   endfunction
 
+    task run_phase(uvm_phase phase);
+    uart_rsp_item rsp_tx;
+    uart_rsp_item rsp_rx;
+    fork
+      // Interface TX transactions
+      forever begin
+        @(negedge vif.tx);
+        rsp_tx = uart_rsp_item::type_id::create("rsp_tx");
+        vif.recv_tx(rsp_tx.data, rsp_tx.parity, baud_rate, parity_enable, parity_type, second_stop_bit, data_bits);
+        rsp_tx.intf_tx = 1;  // TX direction
+        rsp_tx.baud_rate = baud_rate;
+        rsp_tx.parity_enable = parity_enable;
+        rsp_tx.parity_type = parity_type;
+        rsp_tx.second_stop_bit = second_stop_bit;
+        rsp_tx.data_bits = data_bits;
+        ap.write(rsp_tx);
+      end
+      // Interface RX transactions
+      forever begin
+        @(negedge vif.rx);
+        rsp_rx = uart_rsp_item::type_id::create("rsp_rx");
+        vif.recv_rx(rsp_rx.data, rsp_rx.parity, baud_rate, parity_enable, parity_type, second_stop_bit, data_bits);
+        rsp_rx.intf_tx = 0;  // RX direction
+        rsp_rx.baud_rate = baud_rate;
+        rsp_rx.parity_enable = parity_enable;
+        rsp_rx.parity_type = parity_type;
+        rsp_rx.second_stop_bit = second_stop_bit;
+        rsp_rx.data_bits = data_bits;
+        ap.write(rsp_rx);
+      end
+    join
+  endtask
+
 endclass
 
 `endif

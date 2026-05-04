@@ -27,6 +27,29 @@ class apb_monitor extends uvm_monitor;
     end
   endfunction
 
+  task run_phase(uvm_phase phase);
+    apb_rsp_item rsp;
+    int direction;
+    int address;
+    int write_data;
+    int write_strobe;
+    int read_data;
+    int slverr;
+
+    forever begin
+      // Get the next transaction from the interface
+      apb_intf.get_transaction(direction, address, write_data, write_strobe, read_data, slverr);
+      // Create a response item and populate its fields
+      rsp = apb_rsp_item::type_id::create("rsp");
+      rsp.addr   = address;
+      rsp.write  = direction;
+      rsp.date   = direction ? write_data : read_data;
+      rsp.slverr = slverr;
+      // Send the response item via the analysis port
+      ap.write(rsp);
+    end
+  endtask
+
 endclass
 
 `endif

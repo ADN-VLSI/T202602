@@ -20,6 +20,15 @@ class uart_driver extends uvm_driver #(uart_seq_item);
     end
   endfunction
 
+  task run_phase(uvm_phase phase);
+    uart_seq_item req;
+    forever begin
+      seq_item_port.get_next_item(req);
+      uart_intf.send_tx(req.data);
+      seq_item_port.item_done();
+    end
+  endtask
+
 endclass
 
 `endif

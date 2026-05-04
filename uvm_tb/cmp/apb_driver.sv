@@ -20,6 +20,20 @@ class apb_driver extends uvm_driver #(apb_seq_item);
     end
   endfunction
 
+  task run_phase(uvm_phase phase);
+    apb_seq_item req;
+    forever begin
+      seq_item_port.get_next_item(req);
+      if(req.write) begin
+        apb_intf.write(req.addr, req.data);
+      end else begin
+        int read_data;
+        apb_intf.read(req.addr, read_data);
+      end
+      seq_item_port.item_done();
+    end
+  endtask
+
 endclass
 
 `endif
